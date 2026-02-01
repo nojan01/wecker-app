@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AlarmMaster</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Wecker-Hauptansicht -->
+        <div class="alarm-clock">
+            <!-- Holzrahmen links -->
+            <div class="wood-frame left"></div>
+            
+            <!-- Hauptdisplay -->
+            <div class="clock-body" id="clock-body">
+                <!-- Titelleiste -->
+                <div class="title-bar">
+                    <span class="title">AlarmMaster</span>
+                </div>
+                
+                <!-- Wochentage -->
+                <div class="weekdays-display">
+                    <span class="weekday-item" data-day="so">SUN</span>
+                    <span class="weekday-item" data-day="mo">MON</span>
+                    <span class="weekday-item" data-day="di">TUE</span>
+                    <span class="weekday-item" data-day="mi">WED</span>
+                    <span class="weekday-item" data-day="do">THU</span>
+                    <span class="weekday-item" data-day="fr">FRI</span>
+                    <span class="weekday-item" data-day="sa">SAT</span>
+                </div>
+                
+                <!-- Digitale Zeitanzeige -->
+                <div class="time-display">
+                    <div class="digit-group hours">
+                        <span class="digit" id="hour1">0</span>
+                        <span class="digit" id="hour2">0</span>
+                    </div>
+                    <div class="colon">
+                        <span class="dot"></span>
+                        <span class="dot"></span>
+                    </div>
+                    <div class="digit-group minutes">
+                        <span class="digit" id="min1">0</span>
+                        <span class="digit" id="min2">0</span>
+                    </div>
+                    <div class="ampm-indicator">
+                        <span id="am-indicator" class="am">AM</span>
+                        <span id="pm-indicator" class="pm active">PM</span>
+                    </div>
+                </div>
+                
+                <!-- Status-Anzeige -->
+                <div class="status-bar">
+                    <div class="next-alarm-info">
+                        <span id="next-alarm-text">No alarm set</span>
+                    </div>
+                    <div class="status-controls">
+                        <button id="time-format-btn" class="format-button" title="Toggle 12h/24h">
+                            <span id="format-label">24H</span>
+                        </button>
+                        <button id="settings-btn" class="settings-button" title="Settings">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="3"></circle>
+                                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Holzrahmen rechts -->
+            <div class="wood-frame right"></div>
+        </div>
+        
+        <!-- Einstellungs-Panel -->
+        <div class="settings-panel">
+            <div class="settings-header">
+                <h3>Alarm Settings</h3>
+                <button id="add-alarm-btn" class="btn-add-alarm">+ Add Alarm</button>
+            </div>
+            
+            <!-- Alarm-Liste -->
+            <div id="alarms-list" class="alarms-list">
+                <div class="empty-state">
+                    <p>No alarms set</p>
+                </div>
+            </div>
+            
+            <!-- Schlafmodus Einstellungen -->
+            <div class="sleep-mode-section">
+                <div class="sleep-mode-header">
+                    <h4>🌙 Sleep Mode</h4>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="sleep-mode-toggle">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="sleep-mode-options" id="sleep-mode-options">
+                    <div class="sleep-option">
+                        <label for="sleep-brightness">Brightness</label>
+                        <input type="range" id="sleep-brightness" min="5" max="100" value="20">
+                        <span id="brightness-value">20%</span>
+                    </div>
+                    <div class="sleep-option">
+                        <label for="sleep-auto-start">Auto-start at</label>
+                        <input type="time" id="sleep-auto-start" value="22:00">
+                    </div>
+                    <div class="sleep-option">
+                        <label for="sleep-auto-end">Auto-end at</label>
+                        <input type="time" id="sleep-auto-end" value="06:00">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Power Management Einstellungen -->
+            <div class="power-section">
+                <div class="power-header">
+                    <h4>⚡ Power Management</h4>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="prevent-sleep-toggle">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <p class="power-description" id="power-status">Verhindert Mac-Schlafmodus wenn Alarm aktiv</p>
+            </div>
+        </div>
+
+        <!-- Alarm Modal -->
+        <div id="alarm-modal" class="modal hidden">
+            <div class="modal-content alarm-edit-modal">
+                <div class="modal-header">
+                    <h3 id="modal-title">New Alarm</h3>
+                    <button class="btn-close" id="close-modal">&times;</button>
+                </div>
+                <form id="alarm-form">
+                    <input type="hidden" id="alarm-id">
+                    
+                    <div class="form-row">
+                        <div class="form-group time-group">
+                            <label for="alarm-time">Alarm Time</label>
+                            <input type="time" id="alarm-time" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="alarm-label">Label</label>
+                        <input type="text" id="alarm-label" placeholder="e.g. Wake up">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Repeat</label>
+                        <div class="weekdays-selector">
+                            <label class="weekday-checkbox">
+                                <input type="checkbox" name="days" value="so">
+                                <span>S</span>
+                            </label>
+                            <label class="weekday-checkbox">
+                                <input type="checkbox" name="days" value="mo">
+                                <span>M</span>
+                            </label>
+                            <label class="weekday-checkbox">
+                                <input type="checkbox" name="days" value="di">
+                                <span>T</span>
+                            </label>
+                            <label class="weekday-checkbox">
+                                <input type="checkbox" name="days" value="mi">
+                                <span>W</span>
+                            </label>
+                            <label class="weekday-checkbox">
+                                <input type="checkbox" name="days" value="do">
+                                <span>T</span>
+                            </label>
+                            <label class="weekday-checkbox">
+                                <input type="checkbox" name="days" value="fr">
+                                <span>F</span>
+                            </label>
+                            <label class="weekday-checkbox">
+                                <input type="checkbox" name="days" value="sa">
+                                <span>S</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="alarm-sound">Sound</label>
+                        <div class="sound-selector">
+                            <select id="alarm-sound">
+                                <option value="gentle-rise">🌅 Gentle Rise</option>
+                                <option value="morning-birds">🐦 Morning Birds</option>
+                                <option value="ocean-waves">🌊 Ocean Waves</option>
+                                <option value="wind-chimes">🎐 Wind Chimes</option>
+                                <option value="soft-piano">🎹 Soft Piano</option>
+                                <option value="zen-bells">🔔 Zen Bells</option>
+                                <option value="digital-beep">📟 Digital Beep</option>
+                                <option value="classic-alarm">⏰ Classic Alarm</option>
+                                <option value="rooster">🐓 Rooster</option>
+                                <option value="harp">🎵 Harp</option>
+                            </select>
+                            <button type="button" id="preview-sound" class="btn-preview">▶</button>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Volume Fade</label>
+                        <div class="volume-fade-control">
+                            <input type="range" id="volume-slider" min="0" max="100" value="70">
+                            <label class="fade-checkbox">
+                                <input type="checkbox" id="fade-enabled" checked>
+                                <span>Fade in</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-group snooze-group">
+                        <label class="snooze-label">
+                            <input type="checkbox" id="snooze-enabled" checked>
+                            <span>Snooze</span>
+                        </label>
+                        <div class="snooze-duration-control">
+                            <input type="number" id="snooze-duration" min="1" max="30" value="9">
+                            <span>min</span>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" id="delete-alarm" class="btn-delete hidden">Delete</button>
+                        <button type="button" id="save-alarm" class="btn-save">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Alarm-Benachrichtigung -->
+        <div id="alarm-notification" class="alarm-notification hidden">
+            <div class="alarm-clock ringing">
+                <div class="wood-frame left"></div>
+                <div class="clock-body">
+                    <div class="title-bar">
+                        <span class="title">⏰ ALARM!</span>
+                    </div>
+                    <div class="alarm-ringing-display">
+                        <div class="ringing-time" id="alarm-display-time">07:30</div>
+                        <div class="ringing-label" id="alarm-display-label">Wake up</div>
+                    </div>
+                    <div class="alarm-actions">
+                        <button id="snooze-btn" class="btn-snooze">Snooze</button>
+                        <button id="dismiss-btn" class="btn-dismiss">Stop</button>
+                    </div>
+                </div>
+                <div class="wood-frame right"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="storage.js"></script>
+    <script src="audio-player.js"></script>
+    <script src="alarm-manager.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

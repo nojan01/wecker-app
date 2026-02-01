@@ -1,0 +1,17 @@
+{
+  "name": "wecker-app",
+  "version": "1.0.0",
+  "description": "Eine moderne Wecker-Anwendung mit flexiblen Weckzeiten und Wochenprogramm.",
+  "main": "index.html",
+  "scripts": {
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build"
+  },
+  "keywords": ["alarm", "clock", "wecker", "tauri"],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.9.6"
+  }
+}
