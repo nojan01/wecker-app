@@ -10,6 +10,7 @@ const AudioPlayer = (function() {
     let isPlaying = false;
     let volumeInterval = null;
     let oscillators = [];
+    let noteTimeoutId = null;
 
     // Vordefinierte Sounds (als Oszillator-basierte Töne)
     const SOUNDS = {
@@ -102,7 +103,7 @@ const AudioPlayer = (function() {
             }
 
             noteIndex++;
-            setTimeout(playNextNote, sound.tempo || 400);
+            noteTimeoutId = setTimeout(playNextNote, sound.tempo || 400);
         }
 
         playNextNote();
@@ -135,21 +136,31 @@ const AudioPlayer = (function() {
     function stop() {
         isPlaying = false;
 
+        // Timeout für nächste Note abbrechen
+        if (noteTimeoutId) {
+            clearTimeout(noteTimeoutId);
+            noteTimeoutId = null;
+        }
+
         if (volumeInterval) {
             clearInterval(volumeInterval);
             volumeInterval = null;
-        }
-
-        if (gainNode && audioContext) {
-            try {
-                gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-            } catch (e) {}
         }
 
         oscillators.forEach(osc => {
             try { osc.stop(); } catch(e) {}
         });
         oscillators = [];
+
+        if (gainNode) {
+            try {
+                if (audioContext) {
+                    gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+                }
+                gainNode.disconnect();
+            } catch (e) {}
+            gainNode = null;
+        }
 
         if (currentSource) {
             try {
