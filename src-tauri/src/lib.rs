@@ -77,6 +77,28 @@ fn check_sleep_permission() -> bool {
     }
 }
 
+/// Weckt den Bildschirm auf (beendet Bildschirmschoner)
+#[tauri::command]
+fn wake_screen() -> Result<String, String> {
+    #[cfg(target_os = "macos")]
+    {
+        // caffeinate -u simuliert User-Aktivität und weckt den Bildschirm
+        let output = Command::new("caffeinate")
+            .args(["-u", "-t", "5"])
+            .spawn();
+        
+        match output {
+            Ok(_) => Ok("Bildschirm aufgeweckt".to_string()),
+            Err(e) => Err(format!("Fehler: {}", e))
+        }
+    }
+    
+    #[cfg(not(target_os = "macos"))]
+    {
+        Err("Nur auf macOS unterstützt".to_string())
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
   tauri::Builder::default()
@@ -84,7 +106,8 @@ pub fn run() {
     .invoke_handler(tauri::generate_handler![
         prevent_sleep,
         schedule_wake,
-        check_sleep_permission
+        check_sleep_permission,
+        wake_screen
     ])
     .setup(|app| {
       if cfg!(debug_assertions) {

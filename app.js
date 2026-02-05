@@ -5,8 +5,10 @@
 
 // Tauri API
 let tauriWindow = null;
+let tauriInvoke = null;
 if (window.__TAURI__) {
     tauriWindow = window.__TAURI__.window;
+    tauriInvoke = window.__TAURI__.core?.invoke;
 }
 
 // DOM-Elemente - Uhr
@@ -106,16 +108,27 @@ function checkAlarms(now) {
     
     const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
     const currentDay = WEEKDAYS_MAP[now.getDay()];
+    const currentSeconds = now.getSeconds();
     
     const alarms = AlarmManager.getAlarms();
     
     for (const alarm of alarms) {
         if (!alarm.enabled) continue;
-        if (alarm.time !== currentTime) continue;
         if (!alarm.days.includes(currentDay)) continue;
         
-        // Nur in der ersten Sekunde der Minute auslösen
-        if (now.getSeconds() === 0) {
+        // Prüfe ob der Alarm in 30 Sekunden startet (Bildschirm aufwecken)
+        const [alarmHour, alarmMin] = alarm.time.split(':').map(Number);
+        const alarmTotalSeconds = alarmHour * 3600 + alarmMin * 60;
+        const nowTotalSeconds = now.getHours() * 3600 + now.getMinutes() * 60 + currentSeconds;
+        const secondsUntilAlarm = alarmTotalSeconds - nowTotalSeconds;
+        
+        // 30 Sekunden vorher: Bildschirm aufwecken
+        if (secondsUntilAlarm === 30 && tauriInvoke) {
+            tauriInvoke('wake_screen').catch(err => console.log('Wake screen error:', err));
+        }
+        
+        // Alarm auslösen
+        if (alarm.time === currentTime && currentSeconds === 0) {
             triggerAlarm(alarm);
             break;
         }
@@ -213,7 +226,9 @@ function updateNextAlarm() {
             }
         }
         
-        nextAlarmText.textContent = `${dayText}, ${nextAlarm.time}`;
+        // Zeige Alarm-Label statt Tag, oder "Alarm" als Fallback
+        const labelText = nextAlarm.label || dayText || 'Alarm';
+        nextAlarmText.textContent = `${labelText}, ${nextAlarm.time}`;
         nextAlarmText.classList.add('alarm-set');
     } else {
         nextAlarmText.textContent = 'No alarm set';

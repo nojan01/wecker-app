@@ -279,8 +279,10 @@ body {
 }
 
 #next-alarm-text.alarm-set {
-    color: var(--accent-green);
-    background: rgba(76, 175, 80, 0.15);
+    color: var(--clock-bg);
+    background: var(--digit-color);
+    box-shadow: 0 0 15px var(--digit-glow), 0 0 30px var(--digit-glow);
+    font-weight: 600;
 }
 
 /* Status Controls Container */
