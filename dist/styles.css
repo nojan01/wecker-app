@@ -993,7 +993,7 @@ body {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.9);
+    background: transparent;
     z-index: 2000;
     display: flex;
     align-items: center;
@@ -1125,4 +1125,118 @@ body {
 
 .alarms-list::-webkit-scrollbar-thumb:hover {
     background: rgba(255,255,255,0.3);
+}
+
+/* Wake Helper Section */
+.wake-helper-section {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 16px;
+    margin-top: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.wake-helper-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.wake-helper-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: #e0e0e0;
+}
+
+.wake-helper-title svg {
+    color: #ff9500;
+}
+
+.wake-helper-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    color: #999;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.status-dot.active {
+    background: #30d158;
+    box-shadow: 0 0 6px rgba(48, 209, 88, 0.4);
+}
+
+.status-dot.inactive {
+    background: #666;
+}
+
+.wake-helper-desc {
+    font-size: 0.8rem;
+    color: #888;
+    margin: 4px 0 12px 0;
+    line-height: 1.4;
+}
+
+.wake-helper-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-helper-install,
+.btn-helper-uninstall {
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: none;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;
+}
+
+.btn-helper-install {
+    background: rgba(255, 149, 0, 0.2);
+    color: #ff9500;
+    border: 1px solid rgba(255, 149, 0, 0.3);
+}
+
+.btn-helper-install:hover {
+    background: rgba(255, 149, 0, 0.3);
+}
+
+.btn-helper-uninstall {
+    background: rgba(255, 69, 58, 0.15);
+    color: #ff453a;
+    border: 1px solid rgba(255, 69, 58, 0.2);
+}
+
+.btn-helper-uninstall:hover {
+    background: rgba(255, 69, 58, 0.25);
+}
+
+.btn-helper-install:disabled,
+.btn-helper-uninstall:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.wake-helper-info {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.wake-helper-info small {
+    color: #888;
+    font-size: 0.75rem;
 }

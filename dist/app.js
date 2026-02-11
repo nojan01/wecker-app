@@ -113,13 +113,15 @@ function checkAlarms(now) {
         const nowTotalSeconds = now.getHours() * 3600 + now.getMinutes() * 60 + currentSeconds;
         const secondsUntilAlarm = alarmTotalSeconds - nowTotalSeconds;
         
-        // 30 Sekunden vorher: Bildschirm aufwecken
-        if (secondsUntilAlarm === 30 && tauriInvoke) {
+        // 30 Sekunden vorher: Bildschirm aufwecken (Bereich 25-35 Sekunden)
+        if (secondsUntilAlarm >= 25 && secondsUntilAlarm <= 35 && currentSeconds === 30 && tauriInvoke) {
+            console.log('Waking screen, alarm in', secondsUntilAlarm, 'seconds');
             tauriInvoke('wake_screen').catch(err => console.log('Wake screen error:', err));
         }
         
-        // Alarm auslösen
-        if (alarm.time === currentTime && currentSeconds === 0) {
+        // Alarm auslösen - in den ersten 2 Sekunden der Minute
+        if (alarm.time === currentTime && currentSeconds <= 1) {
+            console.log('Triggering alarm:', alarm.label || alarm.time);
             triggerAlarm(alarm);
             break;
         }
@@ -285,6 +287,7 @@ function renderAlarms() {
     });
     
     updateNextAlarm();
+    syncWakeSchedule();
 }
 
 /**
@@ -799,6 +802,149 @@ async function scheduleWakeForNextAlarm() {
     }
 }
 
+// =====================
+// Wake Helper Functions
+// =====================
+async function initWakeHelper() {
+    // Event Listener für Install/Uninstall Button
+    const helperBtn = document.getElementById('install-helper-btn');
+    if (helperBtn) {
+        helperBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleWakeHelper();
+        });
+    }
+    
+    if (!tauriInvoke) {
+        console.log('Wake Helper: tauriInvoke not available');
+        return;
+    }
+    try {
+        const installed = await tauriInvoke('is_wake_helper_installed');
+        console.log('Wake Helper installed:', installed);
+        updateWakeHelperUI(installed);
+        if (installed) {
+            await syncWakeSchedule();
+            const status = await tauriInvoke('get_wake_helper_status');
+            if (status && status.next_wake) {
+                const infoEl = document.getElementById('wake-helper-info');
+                const nextEl = document.getElementById('wake-helper-next');
+                if (infoEl && nextEl) {
+                    infoEl.style.display = 'block';
+                    nextEl.textContent = 'Next wake: ' + status.next_wake;
+                }
+            }
+        }
+    } catch (err) {
+        console.error('Wake helper init error:', err);
+    }
+}
+
+function updateWakeHelperUI(installed) {
+    const statusDot = document.getElementById('helper-status-dot');
+    const statusText = document.getElementById('helper-status-text');
+    const installBtn = document.getElementById('install-helper-btn');
+    
+    if (!statusDot || !statusText || !installBtn) return;
+    
+    if (installed) {
+        statusDot.className = 'status-dot active';
+        statusText.textContent = 'Active';
+        installBtn.textContent = 'Uninstall Helper';
+        installBtn.className = 'btn-helper-uninstall';
+    } else {
+        statusDot.className = 'status-dot inactive';
+        statusText.textContent = 'Not installed';
+        installBtn.textContent = 'Install Helper';
+        installBtn.className = 'btn-helper-install';
+    }
+}
+
+async function toggleWakeHelper() {
+    console.log('toggleWakeHelper called');
+    if (!tauriInvoke) {
+        console.error('Wake Helper: tauriInvoke not available');
+        alert('Tauri API not available. Please run as Tauri app.');
+        return;
+    }
+    
+    const btn = document.getElementById('install-helper-btn');
+    if (!btn) return;
+    const wasInstalled = btn.textContent === 'Uninstall Helper';
+    btn.disabled = true;
+    btn.textContent = wasInstalled ? 'Removing...' : 'Installing...';
+    
+    try {
+        if (wasInstalled) {
+            console.log('Uninstalling wake helper...');
+            await tauriInvoke('uninstall_wake_helper');
+            updateWakeHelperUI(false);
+            const infoEl = document.getElementById('wake-helper-info');
+            if (infoEl) infoEl.style.display = 'none';
+        } else {
+            console.log('Installing wake helper...');
+            const result = await tauriInvoke('install_wake_helper');
+            console.log('Install result:', result);
+            updateWakeHelperUI(true);
+            await syncWakeSchedule();
+        }
+    } catch (err) {
+        console.error('Wake helper toggle error:', err);
+        alert('Error: ' + err);
+        const installed = await tauriInvoke('is_wake_helper_installed').catch(() => false);
+        updateWakeHelperUI(installed);
+    }
+    btn.disabled = false;
+}
+
+async function syncWakeSchedule() {
+    if (!tauriInvoke) return;
+    try {
+        const installed = await tauriInvoke('is_wake_helper_installed');
+        if (!installed) return;
+        
+        // Find the next enabled alarm
+        const nextAlarm = AlarmManager.getNextAlarm();
+        if (!nextAlarm) {
+            // No alarms - disable wake schedule
+            await tauriInvoke('update_wake_schedule', {
+                nextWake: null,
+                alarmTime: null,
+                label: null
+            });
+            return;
+        }
+        
+        const [hour, minute] = nextAlarm.time.split(':').map(Number);
+        const now = new Date();
+        let wakeDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hour, minute, 0);
+        
+        // If alarm time has passed today, schedule for tomorrow
+        if (wakeDate <= now) {
+            wakeDate.setDate(wakeDate.getDate() + 1);
+        }
+        
+        // Wake 1 minute early
+        wakeDate.setMinutes(wakeDate.getMinutes() - 1);
+        
+        const isoString = wakeDate.getFullYear() + '-' +
+            String(wakeDate.getMonth() + 1).padStart(2, '0') + '-' +
+            String(wakeDate.getDate()).padStart(2, '0') + 'T' +
+            String(wakeDate.getHours()).padStart(2, '0') + ':' +
+            String(wakeDate.getMinutes()).padStart(2, '0') + ':00';
+        
+        await tauriInvoke('update_wake_schedule', {
+            nextWake: isoString,
+            alarmTime: nextAlarm.time,
+            label: nextAlarm.label || 'Alarm'
+        });
+        
+        console.log('Wake schedule synced:', isoString);
+    } catch (err) {
+        console.error('Sync wake schedule error:', err);
+    }
+}
+
 // Initialisierung
 function init() {
     // DOM-Elemente initialisieren
@@ -845,6 +991,9 @@ function init() {
     
     // Power Management initialisieren
     loadPowerSettings();
+    
+    // Wake Helper initialisieren
+    initWakeHelper();
     
     // Caffeinate alle 10 Stunden erneuern (wenn aktiviert)
     setInterval(() => {

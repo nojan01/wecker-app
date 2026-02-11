@@ -40,6 +40,12 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
+    "resources": [
+      "helpers/AlarmMasterWakeHelper.swift",
+      "helpers/com.alarmmaster.wake-helper.plist",
+      "helpers/install.sh",
+      "helpers/uninstall.sh"
+    ],
     "category": "Utility",
     "shortDescription": "A beautiful alarm clock with weekly schedule",
     "longDescription": "Wake Up Time is a modern alarm clock application with digital display, multiple alarms per day, weekly schedule, and progressive volume fade-in."
