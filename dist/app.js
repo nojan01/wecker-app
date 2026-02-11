@@ -144,9 +144,10 @@ function triggerAlarm(alarm) {
     
     // Sound abspielen
     const fadeEnabled = alarm.fadeEnabled !== false;
+    const vol = typeof alarm.volume === 'object' ? (alarm.volume.end ?? 0.7) : (alarm.volume || 0.7);
     AudioPlayer.playAlarm(alarm.sound || 'gentle-rise', {
-        startVolume: fadeEnabled ? 0.1 : (alarm.volume || 0.7),
-        endVolume: alarm.volume || 1.0,
+        startVolume: fadeEnabled ? 0.1 : vol,
+        endVolume: vol,
         duration: fadeEnabled ? 30 : 0
     });
 }
@@ -340,7 +341,8 @@ function editAlarm(id) {
     document.getElementById('alarm-time').value = alarm.time;
     document.getElementById('alarm-label').value = alarm.label || '';
     document.getElementById('alarm-sound').value = alarm.sound || 'gentle-rise';
-    document.getElementById('volume-slider').value = (alarm.volume || 0.7) * 100;
+    const vol = typeof alarm.volume === 'object' ? (alarm.volume.end ?? 0.7) : (alarm.volume || 0.7);
+    document.getElementById('volume-slider').value = vol * 100;
     document.getElementById('fade-enabled').checked = alarm.fadeEnabled !== false;
     document.getElementById('snooze-enabled').checked = alarm.snooze?.enabled !== false;
     document.getElementById('snooze-duration').value = alarm.snooze?.duration || 9;
@@ -387,7 +389,11 @@ function saveAlarm(e) {
         time,
         label,
         sound,
-        volume,
+        volume: {
+            start: fadeEnabled ? 0.1 : volume,
+            end: volume,
+            duration: fadeEnabled ? 30 : 0
+        },
         fadeEnabled,
         days,
         enabled: true,
