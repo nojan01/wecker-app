@@ -103,9 +103,9 @@ const AudioPlayer = (function() {
         osc.type = type;
         osc.frequency.setValueAtTime(frequency, ctx.currentTime);
         
-        // Envelope für sanfteren Sound
+        // Envelope für Sound
         oscGain.gain.setValueAtTime(0, ctx.currentTime);
-        oscGain.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.02);
+        oscGain.gain.linearRampToValueAtTime(0.8, ctx.currentTime + 0.02);
         oscGain.gain.linearRampToValueAtTime(0, ctx.currentTime + duration);
         
         osc.connect(oscGain);
@@ -221,7 +221,7 @@ const AudioPlayer = (function() {
         const sound = SOUNDS[soundType] || SOUNDS['gentle-rise'];
 
         gainNode = ctx.createGain();
-        gainNode.gain.setValueAtTime(0.4, ctx.currentTime);
+        gainNode.gain.setValueAtTime(0.6, ctx.currentTime);
         gainNode.connect(ctx.destination);
 
         isPlaying = true;
