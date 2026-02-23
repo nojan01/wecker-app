@@ -641,6 +641,53 @@ body {
     border-color: var(--accent-blue);
 }
 
+/* Repeat Type Selector */
+.repeat-type-selector {
+    display: flex;
+    gap: 0;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.repeat-type-btn {
+    flex: 1;
+    padding: 8px 16px;
+    background: rgba(0,0,0,0.3);
+    border: none;
+    color: var(--text-dim);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.repeat-type-btn:first-child {
+    border-right: 1px solid rgba(255,255,255,0.1);
+}
+
+.repeat-type-btn.active {
+    background: var(--accent-blue);
+    color: white;
+}
+
+.repeat-type-btn:hover:not(.active) {
+    background: rgba(255,255,255,0.05);
+}
+
+/* Once Badge */
+.badge-once {
+    display: inline-block;
+    padding: 2px 8px;
+    background: rgba(255, 170, 0, 0.25);
+    color: #ffaa00;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    margin-left: 10px;
+    vertical-align: middle;
+}
+
 /* Sound Selector */
 .sound-selector {
     display: flex;

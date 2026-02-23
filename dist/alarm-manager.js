@@ -55,6 +55,7 @@ const AlarmManager = (function() {
             time: alarmData.time || '07:00',
             label: alarmData.label || '',
             enabled: alarmData.enabled !== false,
+            repeatType: alarmData.repeatType || 'recurring',
             days: alarmData.days || ['mo', 'di', 'mi', 'do', 'fr'],
             sound: alarmData.sound || 'alarm1',
             volume: {
@@ -93,6 +94,7 @@ const AlarmManager = (function() {
                 ...alarms[index].snooze,
                 ...(updates.snooze || {})
             },
+            repeatType: updates.repeatType || alarms[index].repeatType || 'recurring',
             updatedAt: new Date().toISOString()
         };
 

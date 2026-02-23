@@ -164,6 +164,14 @@ function triggerAlarm(alarm) {
 function dismissAlarm() {
     AudioPlayer.stop();
     alarmNotification.classList.add('hidden');
+    
+    // Einmalige Alarme automatisch löschen
+    if (currentlyRingingAlarm && currentlyRingingAlarm.repeatType === 'once') {
+        AlarmManager.deleteAlarm(currentlyRingingAlarm.id);
+        renderAlarms();
+        syncWakeSchedule();
+    }
+    
     currentlyRingingAlarm = null;
 }
 
@@ -258,7 +266,7 @@ function renderAlarms() {
     alarmsListEl.innerHTML = alarms.map(alarm => `
         <div class="alarm-item ${alarm.enabled ? '' : 'disabled'}" data-id="${alarm.id}">
             <div class="alarm-info" onclick="editAlarm('${alarm.id}')">
-                <div class="alarm-time-display">${alarm.time}</div>
+                <div class="alarm-time-display">${alarm.time}${alarm.repeatType === 'once' ? '<span class="badge-once">Once</span>' : ''}</div>
                 <div class="alarm-details">${alarm.label || 'Alarm'}</div>
                 <div class="alarm-days-mini">
                     ${daysOrder.map((day, i) => `
@@ -303,6 +311,10 @@ function openNewAlarmModal() {
     document.getElementById('snooze-enabled').checked = true;
     document.getElementById('snooze-duration').value = 9;
     
+    // Repeat-Type zurücksetzen
+    document.getElementById('alarm-repeat-type').value = 'recurring';
+    updateRepeatTypeUI('recurring');
+    
     // Wochentage zurücksetzen (Mo-Fr standardmäßig)
     const dayValues = ['so', 'mo', 'di', 'mi', 'do', 'fr', 'sa'];
     document.querySelectorAll('input[name="days"]').forEach((cb, i) => {
@@ -333,6 +345,11 @@ function editAlarm(id) {
     document.getElementById('snooze-enabled').checked = alarm.snooze?.enabled !== false;
     document.getElementById('snooze-duration').value = alarm.snooze?.duration || 9;
     
+    // Repeat-Type
+    const repeatType = alarm.repeatType || 'recurring';
+    document.getElementById('alarm-repeat-type').value = repeatType;
+    updateRepeatTypeUI(repeatType);
+    
     // Wochentage
     document.querySelectorAll('input[name="days"]').forEach(cb => {
         cb.checked = alarm.days.includes(cb.value);
@@ -360,6 +377,7 @@ function saveAlarm(e) {
     const sound = document.getElementById('alarm-sound').value;
     const volume = parseInt(document.getElementById('volume-slider').value) / 100;
     const fadeEnabled = document.getElementById('fade-enabled').checked;
+    const repeatType = document.getElementById('alarm-repeat-type').value;
     const days = Array.from(document.querySelectorAll('input[name="days"]:checked')).map(cb => cb.value);
     
     if (days.length === 0) {
@@ -373,6 +391,7 @@ function saveAlarm(e) {
         sound,
         volume,
         fadeEnabled,
+        repeatType,
         days,
         enabled: true,
         snooze: {
@@ -414,6 +433,16 @@ function previewSound() {
     AudioPlayer.preview(sound);
 }
 
+/**
+ * Repeat-Type UI aktualisieren
+ */
+function updateRepeatTypeUI(type) {
+    document.querySelectorAll('.repeat-type-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.type === type);
+    });
+    document.getElementById('alarm-repeat-type').value = type;
+}
+
 // Event Listeners
 addAlarmBtn.addEventListener('click', openNewAlarmModal);
 closeModalBtn.addEventListener('click', closeModal);
@@ -422,6 +451,13 @@ deleteAlarmBtn.addEventListener('click', deleteCurrentAlarm);
 dismissBtn.addEventListener('click', dismissAlarm);
 snoozeBtn.addEventListener('click', snoozeAlarm);
 document.getElementById('preview-sound').addEventListener('click', previewSound);
+
+// Repeat-Type Buttons
+document.querySelectorAll('.repeat-type-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        updateRepeatTypeUI(btn.dataset.type);
+    });
+});
 
 // Settings Button - scrollt zu den Einstellungen
 if (settingsBtn) {
