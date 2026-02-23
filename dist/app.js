@@ -34,6 +34,7 @@ const WEEKDAY_NAMES = {
 // Aktueller Bearbeitungsmodus
 let editingAlarmId = null;
 let currentlyRingingAlarm = null;
+let lastTriggeredAlarmKey = null; // Verhindert doppeltes Auslösen in derselben Minute
 let use24HourFormat = true; // 24-Stunden-Format
 
 // Sleep Mode Einstellungen
@@ -101,6 +102,12 @@ function checkAlarms(now) {
     const currentDay = WEEKDAYS_MAP[now.getDay()];
     const currentSeconds = now.getSeconds();
     
+    // Reset Tracking-Key wenn Minute sich ändert
+    const currentMinuteKey = `${currentTime}-${currentDay}`;
+    if (lastTriggeredAlarmKey && !lastTriggeredAlarmKey.startsWith(currentTime)) {
+        lastTriggeredAlarmKey = null;
+    }
+    
     const alarms = AlarmManager.getAlarms();
     
     for (const alarm of alarms) {
@@ -119,9 +126,11 @@ function checkAlarms(now) {
             tauriInvoke('wake_screen').catch(err => console.log('Wake screen error:', err));
         }
         
-        // Alarm auslösen - in den ersten 2 Sekunden der Minute
-        if (alarm.time === currentTime && currentSeconds <= 1) {
-            console.log('Triggering alarm:', alarm.label || alarm.time);
+        // Alarm auslösen - innerhalb der gesamten Minute, aber nur einmal pro Alarm pro Minute
+        const alarmTriggerKey = `${currentTime}-${alarm.id}`;
+        if (alarm.time === currentTime && lastTriggeredAlarmKey !== alarmTriggerKey) {
+            console.log('Triggering alarm:', alarm.label || alarm.time, 'at second:', currentSeconds);
+            lastTriggeredAlarmKey = alarmTriggerKey;
             triggerAlarm(alarm);
             break;
         }
@@ -162,11 +171,15 @@ function dismissAlarm() {
     // Einmalige Alarme automatisch löschen
     if (currentlyRingingAlarm && currentlyRingingAlarm.repeatType === 'once') {
         AlarmManager.deleteAlarm(currentlyRingingAlarm.id);
-        renderAlarms();
-        syncWakeSchedule();
+        console.log('Once alarm deleted:', currentlyRingingAlarm.id);
     }
     
     currentlyRingingAlarm = null;
+    
+    // Immer nach Dismiss: Alarm-Liste, nächsten Alarm und Wake-Schedule aktualisieren
+    renderAlarms();
+    updateNextAlarm();
+    syncWakeSchedule();
 }
 
 /**
@@ -937,17 +950,37 @@ async function syncWakeSchedule() {
                 alarmTime: null,
                 label: null
             });
+            console.log('Wake schedule cleared - no active alarms');
             return;
         }
         
         const [hour, minute] = nextAlarm.time.split(':').map(Number);
         const now = new Date();
-        let wakeDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hour, minute, 0);
+        const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+        const dayOrder = ['so', 'mo', 'di', 'mi', 'do', 'fr', 'sa'];
+        const currentDayIndex = now.getDay(); // 0=So, 1=Mo, ...
         
-        // If alarm time has passed today, schedule for tomorrow
-        if (wakeDate <= now) {
-            wakeDate.setDate(wakeDate.getDate() + 1);
+        // Berechne den korrekten Kalendertag für den nächsten Alarm
+        let daysUntilAlarm = 0;
+        const currentDay = dayOrder[currentDayIndex];
+        
+        if (nextAlarm.days.includes(currentDay) && nextAlarm.time > currentTime) {
+            // Alarm ist heute und noch nicht vorbei
+            daysUntilAlarm = 0;
+        } else {
+            // Suche den nächsten passenden Tag
+            for (let i = 1; i <= 7; i++) {
+                const checkDayIndex = (currentDayIndex + i) % 7;
+                const checkDay = dayOrder[checkDayIndex];
+                if (nextAlarm.days.includes(checkDay)) {
+                    daysUntilAlarm = i;
+                    break;
+                }
+            }
         }
+        
+        let wakeDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hour, minute, 0);
+        wakeDate.setDate(wakeDate.getDate() + daysUntilAlarm);
         
         // Wake 1 minute early
         wakeDate.setMinutes(wakeDate.getMinutes() - 1);
@@ -964,7 +997,7 @@ async function syncWakeSchedule() {
             label: nextAlarm.label || 'Alarm'
         });
         
-        console.log('Wake schedule synced:', isoString);
+        console.log('Wake schedule synced:', isoString, '(in', daysUntilAlarm, 'days)');
     } catch (err) {
         console.error('Sync wake schedule error:', err);
     }

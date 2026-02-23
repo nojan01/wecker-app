@@ -55,6 +55,7 @@ const WEEKDAY_NAMES = {
 // Aktueller Bearbeitungsmodus
 let editingAlarmId = null;
 let currentlyRingingAlarm = null;
+let lastTriggeredAlarmKey = null; // Verhindert doppeltes Auslösen in derselben Minute
 let use24HourFormat = true; // 24-Stunden-Format
 
 /**
@@ -127,11 +128,19 @@ function checkAlarms(now) {
             tauriInvoke('wake_screen').catch(err => console.log('Wake screen error:', err));
         }
         
-        // Alarm auslösen
-        if (alarm.time === currentTime && currentSeconds === 0) {
+        // Alarm auslösen - innerhalb der gesamten Minute, aber nur einmal pro Alarm pro Minute
+        const alarmTriggerKey = `${currentTime}-${alarm.id}`;
+        if (alarm.time === currentTime && lastTriggeredAlarmKey !== alarmTriggerKey) {
+            console.log('Triggering alarm:', alarm.label || alarm.time, 'at second:', currentSeconds);
+            lastTriggeredAlarmKey = alarmTriggerKey;
             triggerAlarm(alarm);
             break;
         }
+    }
+    
+    // Reset Tracking-Key wenn Minute sich ändert
+    if (lastTriggeredAlarmKey && !lastTriggeredAlarmKey.startsWith(currentTime)) {
+        lastTriggeredAlarmKey = null;
     }
 }
 
@@ -168,11 +177,15 @@ function dismissAlarm() {
     // Einmalige Alarme automatisch löschen
     if (currentlyRingingAlarm && currentlyRingingAlarm.repeatType === 'once') {
         AlarmManager.deleteAlarm(currentlyRingingAlarm.id);
-        renderAlarms();
-        syncWakeSchedule();
+        console.log('Once alarm deleted:', currentlyRingingAlarm.id);
     }
     
     currentlyRingingAlarm = null;
+    
+    // Immer nach Dismiss: Alarm-Liste, nächsten Alarm und Wake-Schedule aktualisieren
+    renderAlarms();
+    updateNextAlarm();
+    syncWakeSchedule();
 }
 
 /**
