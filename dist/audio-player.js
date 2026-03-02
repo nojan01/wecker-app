@@ -86,7 +86,7 @@ const AudioPlayer = (function() {
     };
 
     function initAudioContext() {
-        if (!audioContext) {
+        if (!audioContext || audioContext.state === 'closed') {
             audioContext = new (window.AudioContext || window.webkitAudioContext)();
         }
         if (audioContext.state === 'suspended') {
@@ -157,7 +157,8 @@ const AudioPlayer = (function() {
             const frequency = getNextFrequency();
             
             if (frequency > 0) {
-                createOscillator(sound.type, frequency, sound.tempo / 1000 * 0.8);
+                const osc = createOscillator(sound.type, frequency, sound.tempo / 1000 * 0.8);
+                oscillators.push(osc);
             }
 
             noteIndex++;
@@ -202,16 +203,28 @@ const AudioPlayer = (function() {
             volumeInterval = null;
         }
 
-        if (gainNode && audioContext) {
-            try {
-                gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-            } catch (e) {}
-        }
-
         oscillators.forEach(osc => {
             try { osc.stop(); } catch(e) {}
         });
         oscillators = [];
+
+        if (gainNode) {
+            try {
+                if (audioContext && audioContext.state !== 'closed') {
+                    gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+                }
+                gainNode.disconnect();
+            } catch (e) {}
+            gainNode = null;
+        }
+
+        // AudioContext schließen und zurücksetzen für zuverlässige Wiedergabe beim nächsten Alarm
+        if (audioContext) {
+            try {
+                audioContext.close();
+            } catch (e) {}
+            audioContext = null;
+        }
     }
 
     function preview(soundType) {
@@ -237,7 +250,8 @@ const AudioPlayer = (function() {
             const frequency = sound.frequencies[noteIndex % sound.frequencies.length];
             
             if (frequency > 0) {
-                createOscillator(sound.type, frequency, 0.25);
+                const osc = createOscillator(sound.type, frequency, 0.25);
+                oscillators.push(osc);
             }
 
             noteIndex++;
